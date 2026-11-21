@@ -200,11 +200,6 @@ class CourierFlowsTest extends TestCase
         $this->assertSame(2000, $consignment->refresh()->paid_amount);
     }
 
-    private function freezeSecond(): void
-    {
-        $this->travelTo(now()->startOfSecond());
-    }
-
     private function fleetPair(string $licence, string $plate): array
     {
         $driver = Driver::create(['name' => $licence, 'licence_number' => $licence]);
