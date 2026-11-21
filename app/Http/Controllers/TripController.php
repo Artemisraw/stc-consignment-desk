@@ -28,7 +28,7 @@ class TripController extends Controller
                 ->latest()->get(),
             'vehicles' => Vehicle::with('defaultDriver')->get()->filter(fn (Vehicle $v) => $v->operational_status === 'available')->values(),
             'drivers' => Driver::where('is_active', true)->orderBy('name')->get(),
-            'waiting' => Consignment::with(['receiver', 'destinationBranch'])->where('status', ConsignmentStatus::Received->value)->get(),
+            'waiting' => Consignment::with(['receiver', 'originBranch', 'destinationBranch'])->where('status', ConsignmentStatus::Received->value)->get(),
             'branches' => Branch::orderBy('route_order')->get(),
         ]);
     }

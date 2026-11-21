@@ -31,6 +31,9 @@ An operations desk for the Nairobi–Mandera courier corridor. Staff register co
 - Cargo changes to `arrived` at its destination branch and can only be delivered from that state.
 - Handover records the outstanding amount as a balance-on-delivery payment before marking the consignment delivered.
 - Route order is Nairobi, Wajir, Elwak, Wargadud, Lafey, Rhamu, Mandera.
+- A trip runs one way along the route: `outbound` (towards Mandera) or `inbound` (towards Nairobi). It starts at the shared origin branch of its consignments, and every consignment on it must travel in the trip's direction.
+- A driver may be on only one active trip, and only active drivers can be dispatched.
+- Payments and handover lock the consignment row, so a double submission cannot overpay or hand over twice.
 
 ## Deferred phase-two work
 

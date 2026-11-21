@@ -66,20 +66,22 @@ class ConsignmentService
 
     public function recordPayment(Consignment $consignment, int $amount, PaymentMethod $method, User $user, ?string $reference = null): Consignment
     {
-        if ($amount < 1 || $amount > $consignment->balance) {
-            throw ValidationException::withMessages(['amount' => 'The payment must be between KES 1 and the outstanding balance.']);
-        }
-
         return DB::transaction(function () use ($consignment, $amount, $method, $user, $reference) {
-            $consignment->payments()->create([
+            // Re-read under a row lock so concurrent submissions cannot both pass the balance check.
+            $locked = Consignment::query()->lockForUpdate()->findOrFail($consignment->id);
+            if ($amount < 1 || $amount > $locked->balance) {
+                throw ValidationException::withMessages(['amount' => 'The payment must be between KES 1 and the outstanding balance.']);
+            }
+
+            $locked->payments()->create([
                 'recorded_by' => $user->id,
                 'amount' => $amount,
                 'method' => $method,
                 'status' => PaymentStatus::Completed,
-                'reference' => $reference ?: Str::upper($method->value).'-'.$consignment->id.'-'.Str::upper(Str::random(5)),
+                'reference' => $reference ?: Str::upper($method->value).'-'.$locked->id.'-'.Str::upper(Str::random(5)),
                 'paid_at' => now(),
             ]);
-            $consignment->increment('paid_amount', $amount);
+            $locked->increment('paid_amount', $amount);
 
             return $consignment->refresh();
         });
@@ -87,18 +89,19 @@ class ConsignmentService
 
     public function deliver(Consignment $consignment, User $user): Consignment
     {
-        if ($consignment->status !== ConsignmentStatus::Arrived) {
-            throw ValidationException::withMessages(['consignment' => 'Only an arrived consignment can be handed over.']);
-        }
-
         return DB::transaction(function () use ($consignment, $user) {
-            if ($consignment->balance > 0) {
-                $this->recordPayment($consignment, $consignment->balance, PaymentMethod::BalanceOnDelivery, $user);
+            $locked = Consignment::query()->lockForUpdate()->findOrFail($consignment->id);
+            if ($locked->status !== ConsignmentStatus::Arrived) {
+                throw ValidationException::withMessages(['consignment' => 'Only an arrived consignment can be handed over.']);
             }
 
-            $consignment->update(['status' => ConsignmentStatus::Delivered, 'delivered_at' => now()]);
-            $consignment->trackingEvents()->create([
-                'branch_id' => $consignment->destination_branch_id,
+            if ($locked->balance > 0) {
+                $this->recordPayment($locked, $locked->balance, PaymentMethod::BalanceOnDelivery, $user);
+            }
+
+            $locked->update(['status' => ConsignmentStatus::Delivered, 'delivered_at' => now()]);
+            $locked->trackingEvents()->create([
+                'branch_id' => $locked->destination_branch_id,
                 'created_by' => $user->id,
                 'status' => ConsignmentStatus::Delivered,
                 'description' => 'Handed over to the receiver.',
