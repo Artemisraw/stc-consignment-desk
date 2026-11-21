@@ -24,6 +24,7 @@ class CourierFlowsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutVite(); // tests must not depend on a local `npm run build`
         Artisan::call('migrate:fresh', ['--force' => true]);
         $this->branches = collect(['Nairobi', 'Wajir', 'Elwak', 'Wargadud', 'Lafey', 'Rhamu', 'Mandera'])
             ->map(fn ($name, $index) => Branch::create(['name' => $name, 'route_order' => $index + 1]));
