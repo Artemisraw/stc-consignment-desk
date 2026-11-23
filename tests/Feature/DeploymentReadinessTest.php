@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Providers\AppServiceProvider;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
@@ -24,7 +25,7 @@ class DeploymentReadinessTest extends TestCase
         config(['app.demo_password' => null]);
 
         try {
-            $this->seed();
+            $this->runDemoSeeder();
             $this->fail('Seeding production without DEMO_PASSWORD should stop.');
         } catch (RuntimeException $e) {
             $this->assertStringContainsString('DEMO_PASSWORD', $e->getMessage());
@@ -37,7 +38,7 @@ class DeploymentReadinessTest extends TestCase
         $this->app['env'] = 'production';
         config(['app.demo_password' => 'uat-Strong-Pass-2026']);
 
-        $this->seed();
+        $this->runDemoSeeder();
 
         $owner = User::where('email', 'owner@skytop.test')->firstOrFail();
         $this->assertTrue(Hash::check('uat-Strong-Pass-2026', $owner->password));
@@ -50,5 +51,11 @@ class DeploymentReadinessTest extends TestCase
         (new AppServiceProvider($this->app))->boot();
 
         $this->assertStringStartsWith('https://', route('tracking', ['tracking' => 'STC-1']));
+    }
+
+    /** Run the seeder directly: `db:seed` in production asks for confirmation, which a test cannot give. */
+    private function runDemoSeeder(): void
+    {
+        $this->app->make(DatabaseSeeder::class)->setContainer($this->app)->run();
     }
 }
