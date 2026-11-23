@@ -68,7 +68,13 @@ class StaffController extends Controller
 
     public function update(UpdateStaffRequest $request, User $user): RedirectResponse
     {
-        $user->update($request->validated());
+        $validated = $request->validated();
+
+        if (blank($validated['password'] ?? null)) {
+            unset($validated['password']);
+        }
+
+        $user->update($validated);
 
         return redirect()->route('staff.index')->with('success', 'Staff account updated.');
     }

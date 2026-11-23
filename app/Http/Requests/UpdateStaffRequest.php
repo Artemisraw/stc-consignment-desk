@@ -6,10 +6,18 @@ use App\Enums\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 
 class UpdateStaffRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => str((string) $this->input('email'))->trim()->lower()->toString(),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('update', $this->route('user')) ?? false;
@@ -20,11 +28,12 @@ class UpdateStaffRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
-                'required', 'string', 'lowercase', 'email', 'max:255',
+                'required', 'string', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($this->route('user')),
             ],
             'role' => ['required', new Enum(Role::class)],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'password' => ['nullable', 'confirmed', Password::min(8)],
         ];
     }
 
