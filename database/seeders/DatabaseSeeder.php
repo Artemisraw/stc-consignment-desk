@@ -29,14 +29,17 @@ class DatabaseSeeder extends Seeder
         $owner = User::create([
             'name' => 'Hassan Mohamed', 'email' => 'owner@skytop.test', 'password' => Hash::make('password'),
             'role' => Role::Owner, 'branch_id' => $branches['Nairobi']->id,
+            'is_active' => true,
         ]);
         User::create([
             'name' => 'Amina Clerk', 'email' => 'clerk@skytop.test', 'password' => Hash::make('password'),
             'role' => Role::Clerk, 'branch_id' => $branches['Nairobi']->id,
+            'is_active' => true,
         ]);
         User::create([
             'name' => 'Abdi Manager', 'email' => 'manager@skytop.test', 'password' => Hash::make('password'),
             'role' => Role::Manager, 'branch_id' => $branches['Nairobi']->id,
+            'is_active' => true,
         ]);
 
         $driverNames = ['Hassan K.', 'Abdi M.', 'Yusuf A.', 'Said O.', 'Ali D.', 'Omar H.', 'Mohamed N.', 'Dahir S.'];
