@@ -58,6 +58,86 @@ class StaffAccountsTest extends TestCase
         $this->assertFalse($staff->refresh()->is_active);
     }
 
+    public function test_owner_can_reset_a_staff_password_and_blank_password_keeps_the_existing_one(): void
+    {
+        $staff = $this->makeUser(Role::Clerk, 'password-reset@example.test');
+
+        $this->actingAs($this->owner)->put("/staff/{$staff->id}", [
+            'name' => $staff->name,
+            'email' => $staff->email,
+            'role' => $staff->role->value,
+            'branch_id' => $staff->branch_id,
+            'password' => '',
+            'password_confirmation' => '',
+        ])->assertSessionHasNoErrors();
+
+        $this->post('/logout');
+        $this->post('/login', [
+            'email' => $staff->email,
+            'password' => 'password',
+        ])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($staff);
+
+        $this->post('/logout');
+        $this->actingAs($this->owner)->put("/staff/{$staff->id}", [
+            'name' => $staff->name,
+            'email' => $staff->email,
+            'role' => $staff->role->value,
+            'branch_id' => $staff->branch_id,
+            'password' => 'owner-reset-password',
+            'password_confirmation' => 'owner-reset-password',
+        ])->assertSessionHasNoErrors();
+
+        $this->post('/logout');
+        $this->post('/login', [
+            'email' => $staff->email,
+            'password' => 'owner-reset-password',
+        ])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($staff);
+    }
+
+    public function test_resetting_a_password_signs_out_sessions_started_with_the_old_one(): void
+    {
+        $staff = $this->makeUser(Role::Clerk, 'signed-in@example.test');
+        $sessionBeforeReset = ['password_hash_web' => $staff->getAuthPassword()];
+
+        $this->actingAs($staff)->withSession($sessionBeforeReset)->get('/dashboard')->assertOk();
+
+        $this->actingAs($this->owner)->put("/staff/{$staff->id}", [
+            'name' => $staff->name,
+            'email' => $staff->email,
+            'role' => $staff->role->value,
+            'branch_id' => $staff->branch_id,
+            'password' => 'owner-reset-password',
+            'password_confirmation' => 'owner-reset-password',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($staff->refresh())->withSession($sessionBeforeReset)->get('/dashboard')->assertRedirect('/login');
+        $this->assertGuest();
+    }
+
+    public function test_staff_email_is_normalized_and_mixed_case_login_succeeds(): void
+    {
+        $this->actingAs($this->owner)->post('/staff', [
+            'name' => 'Amina Clerk',
+            'email' => '  Amina@Example.TEST  ',
+            'role' => Role::Clerk->value,
+            'branch_id' => $this->branch->id,
+            'password' => 'initial-password',
+            'password_confirmation' => 'initial-password',
+        ])->assertSessionHasNoErrors();
+
+        $staff = User::where('email', 'amina@example.test')->firstOrFail();
+
+        $this->post('/logout');
+        $this->post('/login', [
+            'email' => 'Amina@Example.TEST',
+            'password' => 'initial-password',
+        ])->assertRedirect('/dashboard');
+
+        $this->assertAuthenticatedAs($staff);
+    }
+
     public function test_non_owner_roles_receive_forbidden_on_every_staff_route(): void
     {
         foreach ([Role::Manager, Role::Clerk, Role::BranchAgent] as $role) {
@@ -124,19 +204,23 @@ class StaffAccountsTest extends TestCase
 
     public function test_password_change_requires_the_current_password(): void
     {
-        $this->actingAs($this->owner)->put('/account/password', [
+        $failedResponse = $this->actingAs($this->owner)->put('/account/password', [
             'current_password' => 'incorrect-password',
             'password' => 'replacement-password',
             'password_confirmation' => 'replacement-password',
         ])->assertSessionHasErrors('current_password');
         $this->assertTrue(Hash::check('password', $this->owner->refresh()->password));
 
-        $this->actingAs($this->owner)->put('/account/password', [
+        $previousSessionId = $failedResponse->getSession()->getId();
+        $response = $this->actingAs($this->owner)->put('/account/password', [
             'current_password' => 'password',
             'password' => 'replacement-password',
             'password_confirmation' => 'replacement-password',
         ])->assertSessionHasNoErrors();
+
         $this->assertTrue(Hash::check('replacement-password', $this->owner->refresh()->password));
+        $this->assertNotSame($previousSessionId, $response->getSession()->getId());
+        $this->assertNotNull($this->owner->refresh()->getRememberToken());
     }
 
     public function test_sixth_failed_login_within_a_minute_is_throttled(): void

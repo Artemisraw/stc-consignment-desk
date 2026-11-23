@@ -21,23 +21,40 @@ class TripController extends Controller
 {
     public function __construct(private readonly TripService $service) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', Trip::class);
+        $user = $request->user();
+        $canDispatch = $user->can('create', Trip::class);
+        $trips = Trip::with([
+            'vehicle', 'driver', 'currentBranch',
+            'consignments' => fn ($query) => $query->visibleTo($user)->with(['receiver', 'destinationBranch']),
+        ])->visibleTo($user)->latest()->get()
+            ->each(function (Trip $trip) use ($user) {
+                // The stop the button confirms; the server refuses the press if the truck has moved since.
+                $trip->setAttribute('next_stop', $trip->status === TripStatus::InTransit ? $this->service->nextStop($trip)?->only('id', 'name') : null);
+                $trip->setAttribute('can', [
+                    'advance' => $trip->status === TripStatus::InTransit && $user->can('update', $trip),
+                    'cancel' => $user->can('cancel', $trip),
+                ]);
+            });
+
         return Inertia::render('Trips/Index', [
-            'trips' => Trip::with(['vehicle', 'driver', 'currentBranch', 'consignments.receiver', 'consignments.destinationBranch'])
-                ->latest()->get(),
-            'vehicles' => Vehicle::with('defaultDriver')->get()->filter(fn (Vehicle $v) => $v->operational_status === 'available')->values(),
-            'drivers' => Driver::where('is_active', true)->orderBy('name')->get(),
-            'waiting' => Consignment::with(['receiver', 'originBranch', 'destinationBranch'])->where('status', ConsignmentStatus::Received->value)->get(),
+            'trips' => $trips,
+            'vehicles' => $canDispatch ? Vehicle::with('defaultDriver')->get()->filter(fn (Vehicle $v) => $v->operational_status === 'available')->values() : [],
+            'drivers' => $canDispatch ? Driver::where('is_active', true)->orderBy('name')->get() : [],
+            'waiting' => $canDispatch ? Consignment::with(['receiver', 'originBranch', 'destinationBranch'])->where('status', ConsignmentStatus::Received->value)->get() : [],
             'branches' => Branch::orderBy('route_order')->get(),
+            'canDispatch' => $canDispatch,
         ]);
     }
 
-    public function manifest(Trip $trip): Response
+    public function manifest(Request $request, Trip $trip): Response
     {
-        $this->authorize('viewAny', Trip::class);
-        $trip->load(['vehicle', 'driver', 'originBranch', 'currentBranch', 'consignments.receiver', 'consignments.destinationBranch', 'consignments.items']);
+        $this->authorize('view', $trip);
+        // A branch agent's manifest lists only the cargo for their branch.
+        $trip->load(['vehicle', 'driver', 'originBranch', 'currentBranch',
+            'consignments' => fn ($query) => $query->visibleTo($request->user())->with(['receiver', 'destinationBranch', 'items'])]);
 
         $rows = $trip->consignments
             ->sortBy(fn (Consignment $c) => $c->destinationBranch->route_order * ($trip->direction === TripDirection::Inbound ? -1 : 1))
@@ -88,7 +105,8 @@ class TripController extends Controller
     public function advance(Request $request, Trip $trip): RedirectResponse
     {
         $this->authorize('update', $trip);
-        $this->service->advance($trip, $request->user());
+        $data = $request->validate(['stop_id' => ['nullable', 'integer']]);
+        $this->service->advance($trip, $request->user(), isset($data['stop_id']) ? (int) $data['stop_id'] : null);
         return back()->with('success', 'Trip advanced to the next stop.');
     }
 

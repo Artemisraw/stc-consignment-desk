@@ -30,13 +30,14 @@ For the quickest evaluation without MySQL, set `DB_CONNECTION=sqlite`, remove th
 
 ## Seeded accounts
 
-All seeded accounts use the password `password`.
+Locally, all seeded accounts use the password `password` (or `DEMO_PASSWORD` if set). Hosted UAT setup is in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 | Role | Email |
 | --- | --- |
 | Owner | `owner@skytop.test` |
 | Manager | `manager@skytop.test` |
 | Clerk | `clerk@skytop.test` |
+| Branch agent (Wajir) | `wajir@skytop.test` |
 
 The public tracker is at `/`; try `STC-5154`. The staff login is `/login`.
 

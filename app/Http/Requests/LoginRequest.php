@@ -10,6 +10,13 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => str((string) $this->input('email'))->trim()->lower()->toString(),
+        ]);
+    }
+
     public function authorize(): bool { return true; }
     public function rules(): array { return ['email' => ['required', 'email'], 'password' => ['required', 'string'], 'remember' => ['boolean']]; }
 

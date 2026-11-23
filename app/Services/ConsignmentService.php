@@ -53,6 +53,7 @@ class ConsignmentService
             if ($paid > 0) {
                 $consignment->payments()->create([
                     'recorded_by' => $user->id,
+                    'branch_id' => $user->branch_id,
                     'amount' => $paid,
                     'method' => PaymentMethod::Cash,
                     'status' => PaymentStatus::Completed,
@@ -79,6 +80,7 @@ class ConsignmentService
 
             $locked->payments()->create([
                 'recorded_by' => $user->id,
+                'branch_id' => $user->branch_id,
                 'amount' => $amount,
                 'method' => $method,
                 'status' => PaymentStatus::Completed,

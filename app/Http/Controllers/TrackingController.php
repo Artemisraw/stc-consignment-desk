@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Consignment;
+use App\Models\TrackingEvent;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,10 +25,13 @@ class TrackingController extends Controller
                     'origin' => $model->originBranch->name,
                     'destination' => $model->destinationBranch->name,
                     'status' => $model->status->value,
-                    'total_amount' => $model->total_amount,
-                    'paid_amount' => $model->paid_amount,
                     'balance' => $model->balance,
-                    'events' => $model->trackingEvents,
+                    'events' => $model->trackingEvents->map(fn (TrackingEvent $event) => [
+                        'branch' => $event->branch?->name,
+                        'status' => $event->status->value,
+                        'description' => $event->description,
+                        'occurred_at' => $event->occurred_at,
+                    ]),
                 ];
             }
         }
@@ -36,7 +40,7 @@ class TrackingController extends Controller
             'tracking' => $tracking,
             'searched' => $tracking !== '',
             'consignment' => $consignment,
-            'branches' => Branch::orderBy('route_order')->get(['id', 'name', 'route_order']),
+            'branches' => Branch::orderBy('route_order')->get(['name', 'route_order']),
         ]);
     }
 }

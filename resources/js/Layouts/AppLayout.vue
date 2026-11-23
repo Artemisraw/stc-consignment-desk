@@ -9,18 +9,29 @@ const nav = [
     ['/dashboard', 'Dashboard'], ['/consignments', 'Consignments'], ['/consignments/create', 'New consignment'],
     ['/trips', 'Trips'], ['/fleet', 'Fleet'], ['/reports', 'Reports'], ['/staff', 'Staff'], ['/', 'Public tracking'],
 ];
-const active = (href) => href === '/' ? page.url === '/' : page.url.startsWith(href);
+const active = (href) => {
+    const path = page.url.split('?')[0];
+    if (href === '/') return path === '/';
+
+    const mostSpecificMatch = nav
+        .map(([candidate]) => candidate)
+        .filter((candidate) => candidate !== '/' && (path === candidate || path.startsWith(`${candidate}/`)))
+        .sort((a, b) => b.length - a.length)[0];
+
+    return mostSpecificMatch === href;
+};
 </script>
 
 <template>
     <div class="app-shell">
+        <a href="#main-content" class="skip-link">Skip to main content</a>
         <header class="masthead">
             <Link href="/dashboard" class="brand">
                 <span class="logo">STC</span>
-                <span><strong>Sky Top Carriers</strong><small>Consignment operations desk</small></span>
+                <span class="brand-copy"><strong>Sky Top Carriers</strong><small>Nairobi–Mandera operations desk</small></span>
             </Link>
             <div class="user-block" v-if="user">
-                <span><strong>{{ user.name }}</strong><small>{{ user.role.replaceAll('_', ' ') }}</small></span>
+                <span class="user-copy"><strong>{{ user.name }}</strong><small>{{ user.role.replaceAll('_', ' ') }} · live desk</small></span>
                 <Link href="/account/password" class="quiet-button">Password</Link>
                 <Link href="/logout" method="post" as="button" class="quiet-button">Sign out</Link>
             </div>
@@ -31,12 +42,13 @@ const active = (href) => href === '/' ? page.url === '/' : page.url.startsWith(h
                     v-if="(item[0] !== '/reports' || ['manager','owner'].includes(user?.role)) && (item[0] !== '/staff' || user?.role === 'owner')"
                     :href="item[0]"
                     :class="{ active: active(item[0]) }"
+                    :aria-current="active(item[0]) ? 'page' : undefined"
                 >{{ item[1] }}</Link>
             </template>
         </nav>
         <div v-if="flash.success" class="flash success" role="status">{{ flash.success }}</div>
         <div v-if="flash.error" class="flash error" role="alert">{{ flash.error }}</div>
-        <main class="page"><slot /></main>
+        <main id="main-content" class="page"><slot /></main>
     </div>
 </template>
 
