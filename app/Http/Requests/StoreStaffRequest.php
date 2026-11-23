@@ -10,6 +10,13 @@ use Illuminate\Validation\Rules\Password;
 
 class StoreStaffRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => str((string) $this->input('email'))->trim()->lower()->toString(),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', User::class) ?? false;
@@ -19,7 +26,7 @@ class StoreStaffRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', new Enum(Role::class)],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'password' => ['required', 'confirmed', Password::min(8)],
