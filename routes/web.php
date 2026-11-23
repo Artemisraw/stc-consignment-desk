@@ -20,7 +20,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 });
 
-Route::middleware(['auth', EnsureUserIsActive::class])->group(function () {
+// auth.session signs out other sessions once a password changes (own change or owner reset).
+Route::middleware(['auth', 'auth.session', EnsureUserIsActive::class])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/account/password', [PasswordController::class, 'edit'])->name('account.password.edit');
     Route::put('/account/password', [PasswordController::class, 'update'])->name('account.password.update');
@@ -46,7 +47,12 @@ Route::middleware(['auth', EnsureUserIsActive::class])->group(function () {
 
     Route::get('/fleet', [FleetController::class, 'index'])->name('fleet.index');
     Route::post('/fleet/vehicles', [FleetController::class, 'storeVehicle'])->name('fleet.vehicles.store');
+    Route::get('/fleet/vehicles/{vehicle}/edit', [FleetController::class, 'editVehicle'])->name('fleet.vehicles.edit');
+    Route::put('/fleet/vehicles/{vehicle}', [FleetController::class, 'updateVehicle'])->name('fleet.vehicles.update');
     Route::post('/fleet/drivers', [FleetController::class, 'storeDriver'])->name('fleet.drivers.store');
+    Route::get('/fleet/drivers/{driver}/edit', [FleetController::class, 'editDriver'])->name('fleet.drivers.edit');
+    Route::put('/fleet/drivers/{driver}', [FleetController::class, 'updateDriver'])->name('fleet.drivers.update');
+    Route::patch('/fleet/drivers/{driver}/toggle', [FleetController::class, 'toggleDriver'])->name('fleet.drivers.toggle');
     Route::patch('/fleet/vehicles/{vehicle}/toggle', [FleetController::class, 'toggleVehicle'])->name('fleet.vehicles.toggle');
 
     Route::get('/trips', [TripController::class, 'index'])->name('trips.index');

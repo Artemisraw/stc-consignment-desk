@@ -134,6 +134,18 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .payment-row p { margin: .3rem 0 0; }
 .reverse-form { flex-basis: 100%; }
 .reverse-form input { margin-bottom: .5rem; }
+@media screen {
+    .dashboard-table table { min-width: 0; table-layout: fixed; }
+    .dashboard-table th, .dashboard-table td { padding-right: .55rem; padding-left: .55rem; }
+}
+@media screen and (max-width: 600px) {
+    .dashboard-table .table-wrap { overflow: visible; border: 0; background: transparent; }
+    .dashboard-table table, .dashboard-table tbody, .dashboard-table tr, .dashboard-table td { display: block; width: 100%; min-width: 0; }
+    .dashboard-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .dashboard-table tr { margin-bottom: .75rem; padding: .45rem .7rem; border: 1px solid var(--line); background: var(--card); }
+    .dashboard-table td { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .35rem 0; border: 0; text-align: right; }
+    .dashboard-table td::before { content: attr(data-label); color: var(--muted); font-size: .78rem; font-weight: 600; text-align: left; }
+}
 @page { size: A4; margin: 12mm; }
 @media print {
     .masthead, .topnav, .flash, .noprint { display: none !important; }

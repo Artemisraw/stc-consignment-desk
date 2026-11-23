@@ -37,6 +37,7 @@ All seeded accounts use the password `password`.
 | Owner | `owner@skytop.test` |
 | Manager | `manager@skytop.test` |
 | Clerk | `clerk@skytop.test` |
+| Branch agent (Wajir) | `wajir@skytop.test` |
 
 The public tracker is at `/`; try `STC-5154`. The staff login is `/login`.
 

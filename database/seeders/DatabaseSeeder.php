@@ -41,6 +41,11 @@ class DatabaseSeeder extends Seeder
             'role' => Role::Manager, 'branch_id' => $branches['Nairobi']->id,
             'is_active' => true,
         ]);
+        User::create([
+            'name' => 'Farah Wajir Agent', 'email' => 'wajir@skytop.test', 'password' => Hash::make('password'),
+            'role' => Role::BranchAgent, 'branch_id' => $branches['Wajir']->id,
+            'is_active' => true,
+        ]);
 
         $driverNames = ['Hassan K.', 'Abdi M.', 'Yusuf A.', 'Said O.', 'Ali D.', 'Omar H.', 'Mohamed N.', 'Dahir S.'];
         $drivers = collect($driverNames)->map(fn ($name, $i) => Driver::create([
