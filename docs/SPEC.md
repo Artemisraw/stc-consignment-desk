@@ -39,6 +39,8 @@ An operations desk for the Nairobi–Mandera courier corridor. Staff register co
 - A driver may be on only one active trip, and only active drivers can be dispatched.
 - Payments and handover lock the consignment row, so a double submission cannot overpay or hand over twice.
 - Recording a truck's arrival names the stop being confirmed ("Confirm arrival at Wajir"). Under the trip lock the server refuses it if the truck is already there or has moved on, so a double press, two people pressing together or a stale page cannot move a truck an extra stop.
+- A payment records the branch of the staff member who took it; that branch stays with the payment if the staff member later moves.
+- The daily cash-up (`/reports/cash-up`, managers and owners) counts payments received in the period, including ones reversed later, and lists reversals separately on the day they were made. Net is received less reversed; nothing is netted silently.
 
 ## Deferred phase-two work
 

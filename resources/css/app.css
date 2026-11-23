@@ -108,6 +108,23 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .manifest .table-wrap { border-color: #9cadd8; }
 .print-only { display: none; }
 .check-box { width: 4.5rem; }
+.cashup-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 0 1rem; align-items: end; margin-bottom: 1rem; }
+.cashup-filters .actions { margin-bottom: .9rem; }
+.cashup-filters .error-text { grid-column: 1 / -1; }
+.cashup h3 { margin: 1.2rem 0 .5rem; }
+.cashup-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid #9cadd8; }
+.cashup-totals div { padding: .6rem .8rem; border-right: 1px solid #9cadd8; }
+.cashup-totals div:last-child { border-right: 0; }
+.cashup-totals span, .cashup-totals small { display: block; color: var(--muted); font-size: .78rem; }
+.cashup-totals strong { display: block; color: var(--blue); font: 700 1.7rem/1.1 "Barlow Condensed", sans-serif; }
+.cashup-totals .net { background: #eef2fb; }
+.cashup-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.2rem; }
+.cashup-split > div { min-width: 0; } /* let tables scroll inside their column instead of overflowing it */
+.cashup-split table { min-width: 0; }
+.cashup .receipt-head { flex-wrap: wrap; gap: .2rem 1rem; }
+.cashup .receipt-head h2 { white-space: nowrap; }
+@media (max-width: 900px) { .cashup-filters { grid-template-columns: 1fr 1fr; } .cashup-filters .actions { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .cashup-filters, .cashup-split { grid-template-columns: 1fr; } .cashup-totals { grid-template-columns: 1fr; } .cashup-totals div { border-right: 0; border-bottom: 1px solid #9cadd8; } .cashup-totals div:last-child { border-bottom: 0; } }
 @media (max-width: 600px) { .manifest-meta { grid-template-columns: 1fr 1fr; } .signatures, .signatures.three { grid-template-columns: 1fr; } }
 .chip-cancelled, .chip-reversed, .chip-failed { color: var(--stamp); }
 .void-stamp { margin: 0 0 .6rem; padding: .35rem .6rem; border: 2px solid var(--stamp); color: var(--stamp); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
@@ -146,5 +163,10 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
     tr, .signatures, .receipt-row { break-inside: avoid; }
     thead { display: table-header-group; }
     .check-box { border: 1px solid #9cadd8; }
-    a { text-decoration: none; }
+    a { text-decoration: none; color: inherit; }
+    .cashup-totals { grid-template-columns: repeat(3, 1fr); }
+    .cashup-split { grid-template-columns: 1fr 1fr; }
+    .cashup-totals div { border-right: 1px solid #9cadd8; border-bottom: 0; }
+    .cashup-totals div:last-child { border-right: 0; }
+    .cashup h3, .cashup-totals { break-after: avoid; }
 }
