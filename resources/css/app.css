@@ -128,6 +128,10 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .cashup-totals strong { display: block; color: var(--blue); font: 700 1.7rem/1.1 "Barlow Condensed", sans-serif; }
 .cashup-totals .net { background: #eef2fb; }
 .cashup-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.2rem; }
+.cashup-split > div { min-width: 0; } /* let tables scroll inside their column instead of overflowing it */
+.cashup-split table { min-width: 0; }
+.cashup .receipt-head { flex-wrap: wrap; gap: .2rem 1rem; }
+.cashup .receipt-head h2 { white-space: nowrap; }
 @media (max-width: 900px) { .cashup-filters { grid-template-columns: 1fr 1fr; } .cashup-filters .actions { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .cashup-filters, .cashup-split { grid-template-columns: 1fr; } .cashup-totals { grid-template-columns: 1fr; } .cashup-totals div { border-right: 0; border-bottom: 1px solid #9cadd8; } .cashup-totals div:last-child { border-bottom: 0; } }
 @page { size: A4; margin: 12mm; }

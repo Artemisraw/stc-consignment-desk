@@ -5,6 +5,7 @@ import AppLayout from '../../Layouts/AppLayout.vue';
 import StatusChip from '../../Components/StatusChip.vue';
 const props = defineProps({ filters: Object, branches: Array, report: Object, preparedBy: String, printedAt: String });
 const shillings = (value) => Number(value).toLocaleString('en-KE');
+const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const day = (value) => new Date(`${value}T00:00:00`).toLocaleDateString('en-KE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const when = (value) => value ? new Date(value).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const singleDay = computed(() => props.filters.from === props.filters.to);
@@ -41,8 +42,8 @@ const printCashUp = () => window.print();
         </div>
 
         <div class="cashup-totals">
-            <div><span>Received</span><strong>KES {{ shillings(report.totals.received) }}</strong><small>{{ report.totals.payments }} payments</small></div>
-            <div><span>Reversed</span><strong>KES {{ shillings(report.totals.reversed) }}</strong><small>{{ report.totals.reversals }} reversals</small></div>
+            <div><span>Received</span><strong>KES {{ shillings(report.totals.received) }}</strong><small>{{ count(report.totals.payments, 'payment') }}</small></div>
+            <div><span>Reversed</span><strong>KES {{ shillings(report.totals.reversed) }}</strong><small>{{ count(report.totals.reversals, 'reversal') }}</small></div>
             <div class="net"><span>Net to account for</span><strong>KES {{ shillings(report.totals.net) }}</strong><small>Received less reversed</small></div>
         </div>
 
@@ -85,7 +86,7 @@ const printCashUp = () => window.print();
                 </tr>
                 <tr v-if="!report.payments.length"><td colspan="7" class="muted">No payments in this period.</td></tr>
             </tbody>
-            <tfoot><tr><td colspan="6">{{ report.totals.payments }} payments received</td><td class="number">{{ shillings(report.totals.received) }}</td></tr></tfoot>
+            <tfoot><tr><td colspan="6">{{ count(report.totals.payments, 'payment') }} received</td><td class="number">{{ shillings(report.totals.received) }}</td></tr></tfoot>
         </table></div>
         <p class="small muted" v-if="report.payments.some((p) => p.status === 'reversed')">Payments marked Reversed were taken in this period and given back later; the reversal is listed on the day it was made.</p>
 
@@ -101,7 +102,7 @@ const printCashUp = () => window.print();
                 </tr>
                 <tr v-if="!report.reversals.length"><td colspan="8" class="muted">No reversals in this period.</td></tr>
             </tbody>
-            <tfoot><tr><td colspan="7">{{ report.totals.reversals }} reversals</td><td class="number">{{ shillings(report.totals.reversed) }}</td></tr></tfoot>
+            <tfoot><tr><td colspan="7">{{ count(report.totals.reversals, 'reversal') }}</td><td class="number">{{ shillings(report.totals.reversed) }}</td></tr></tfoot>
         </table></div>
 
         <p class="small muted">Amounts in KES. M-Pesa payments are listed with their confirmation reference for checking against the till statement.</p>
