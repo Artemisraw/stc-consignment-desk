@@ -1,0 +1,31 @@
+name: Deploy UAT
+
+# Deploy to Laravel Cloud only after CI has passed on a push to main.
+# Turn off "push to deploy" in Laravel Cloud so untested code never ships, and store the
+# environment's deploy hook URL as the repository secret LARAVEL_CLOUD_DEPLOY_HOOK.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-uat
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Laravel Cloud deployment
+        env:
+          DEPLOY_HOOK: ${{ secrets.LARAVEL_CLOUD_DEPLOY_HOOK }}
+          COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::warning::LARAVEL_CLOUD_DEPLOY_HOOK is not set; skipping deployment."
+            exit 0
+          fi
+          echo "Deploying ${COMMIT} to UAT"
+          curl --fail --silent --show-error -X POST "$DEPLOY_HOOK"
