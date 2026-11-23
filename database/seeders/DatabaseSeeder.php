@@ -23,26 +23,27 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $password = Hash::make($this->demoPassword());
         $branches = collect(['Nairobi', 'Wajir', 'Elwak', 'Wargadud', 'Lafey', 'Rhamu', 'Mandera'])
             ->mapWithKeys(fn (string $name, int $index) => [$name => Branch::create(['name' => $name, 'route_order' => $index + 1])]);
 
         $owner = User::create([
-            'name' => 'Hassan Mohamed', 'email' => 'owner@skytop.test', 'password' => Hash::make('password'),
+            'name' => 'Hassan Mohamed', 'email' => 'owner@skytop.test', 'password' => $password,
             'role' => Role::Owner, 'branch_id' => $branches['Nairobi']->id,
             'is_active' => true,
         ]);
         User::create([
-            'name' => 'Amina Clerk', 'email' => 'clerk@skytop.test', 'password' => Hash::make('password'),
+            'name' => 'Amina Clerk', 'email' => 'clerk@skytop.test', 'password' => $password,
             'role' => Role::Clerk, 'branch_id' => $branches['Nairobi']->id,
             'is_active' => true,
         ]);
         User::create([
-            'name' => 'Abdi Manager', 'email' => 'manager@skytop.test', 'password' => Hash::make('password'),
+            'name' => 'Abdi Manager', 'email' => 'manager@skytop.test', 'password' => $password,
             'role' => Role::Manager, 'branch_id' => $branches['Nairobi']->id,
             'is_active' => true,
         ]);
         User::create([
-            'name' => 'Farah Wajir Agent', 'email' => 'wajir@skytop.test', 'password' => Hash::make('password'),
+            'name' => 'Farah Wajir Agent', 'email' => 'wajir@skytop.test', 'password' => $password,
             'role' => Role::BranchAgent, 'branch_id' => $branches['Wajir']->id,
             'is_active' => true,
         ]);
@@ -114,5 +115,16 @@ class DatabaseSeeder extends Seeder
                 'description' => "Passed through {$current->name}.", 'occurred_at' => now()->subHours(2),
             ]);
         }
+    }
+
+    /** Demo logins use DEMO_PASSWORD; only local and test databases fall back to "password". */
+    private function demoPassword(): string
+    {
+        $password = config('app.demo_password');
+        if (blank($password) && app()->isProduction()) {
+            throw new \RuntimeException('Set DEMO_PASSWORD before seeding demo accounts into a production database.');
+        }
+
+        return blank($password) ? 'password' : $password;
     }
 }
