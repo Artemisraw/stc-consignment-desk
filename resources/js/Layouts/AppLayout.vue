@@ -9,7 +9,17 @@ const nav = [
     ['/dashboard', 'Dashboard'], ['/consignments', 'Consignments'], ['/consignments/create', 'New consignment'],
     ['/trips', 'Trips'], ['/fleet', 'Fleet'], ['/reports', 'Reports'], ['/staff', 'Staff'], ['/', 'Public tracking'],
 ];
-const active = (href) => href === '/' ? page.url === '/' : page.url.startsWith(href);
+const active = (href) => {
+    const path = page.url.split('?')[0];
+    if (href === '/') return path === '/';
+
+    const mostSpecificMatch = nav
+        .map(([candidate]) => candidate)
+        .filter((candidate) => candidate !== '/' && (path === candidate || path.startsWith(`${candidate}/`)))
+        .sort((a, b) => b.length - a.length)[0];
+
+    return mostSpecificMatch === href;
+};
 </script>
 
 <template>
