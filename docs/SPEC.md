@@ -34,6 +34,8 @@ An operations desk for the Nairobi–Mandera courier corridor. Staff register co
 - A trip runs one way along the route: `outbound` (towards Mandera) or `inbound` (towards Nairobi). It starts at the shared origin branch of its consignments, and every consignment on it must travel in the trip's direction.
 - A driver may be on only one active trip, and only active drivers can be dispatched.
 - Payments and handover lock the consignment row, so a double submission cannot overpay or hand over twice.
+- A payment records the branch of the staff member who took it; that branch stays with the payment if the staff member later moves.
+- The daily cash-up (`/reports/cash-up`, managers and owners) counts payments received in the period, including ones reversed later, and lists reversals separately on the day they were made. Net is received less reversed; nothing is netted silently.
 
 ## Deferred phase-two work
 

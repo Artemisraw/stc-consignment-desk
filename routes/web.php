@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\CashUpController;
 use App\Http\Controllers\ConsignmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FleetController;
@@ -55,4 +56,5 @@ Route::middleware(['auth', EnsureUserIsActive::class])->group(function () {
     Route::post('/trips/{trip}/advance', [TripController::class, 'advance'])->name('trips.advance');
 
     Route::get('/reports', ReportController::class)->middleware('role:manager,owner')->name('reports');
+    Route::get('/reports/cash-up', CashUpController::class)->middleware('role:manager,owner')->name('reports.cash-up');
 });

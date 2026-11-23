@@ -78,7 +78,7 @@ class DatabaseSeeder extends Seeder
             ]);
             if ($paid > 0) {
                 $consignment->payments()->create([
-                    'recorded_by' => $owner->id, 'amount' => $paid, 'method' => PaymentMethod::Cash,
+                    'recorded_by' => $owner->id, 'branch_id' => $branches['Nairobi']->id, 'amount' => $paid, 'method' => PaymentMethod::Cash,
                     'status' => PaymentStatus::Completed, 'reference' => 'SEED-'.$consignment->id, 'paid_at' => now()->subDays(2),
                 ]);
             }

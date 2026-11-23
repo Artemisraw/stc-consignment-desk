@@ -12,6 +12,6 @@
 | `trips` | A vehicle journey | vehicle/driver/origin/current-branch FKs, `direction` (outbound/inbound), `status`, timestamps |
 | `trip_consignments` | Trip manifest | unique trip/consignment pair, `unloaded_at` |
 | `tracking_events` | Append-only public history | branch, status, description, metadata, `occurred_at` |
-| `payments` | Completed or pending collections | integer `amount`, method, status, reference |
+| `payments` | Completed, pending or reversed collections | integer `amount`, method, status, reference, `branch_id` (the till that took it, fixed at recording), reversal fields |
 
 Foreign keys protect operational links. Customer and user references that represent historical actors are nullable on deletion; cargo, items, events and payments cascade only when their owning consignment is removed.
