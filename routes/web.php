@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/trips', [TripController::class, 'index'])->name('trips.index');
     Route::post('/trips', [TripController::class, 'store'])->name('trips.store');
+    Route::get('/trips/{trip}/manifest', [TripController::class, 'manifest'])->name('trips.manifest');
     Route::post('/trips/{trip}/advance', [TripController::class, 'advance'])->name('trips.advance');
 
     Route::get('/reports', ReportController::class)->middleware('role:manager,owner')->name('reports');

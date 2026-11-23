@@ -201,6 +201,38 @@ class CourierFlowsTest extends TestCase
         $this->assertSame(2000, $consignment->refresh()->paid_amount);
     }
 
+    public function test_trip_manifest_lists_cargo_in_unloading_order_with_totals(): void
+    {
+        [$driver, $vehicle] = $this->fleetPair('DL-1', 'KAA 100A');
+        $toMandera = $this->receivedConsignment(tracking: 'STC-M', destination: 6);
+        $toWajir = $this->receivedConsignment(paid: 500, tracking: 'STC-W', destination: 1);
+
+        $this->actingAs($this->owner)->post('/trips', [
+            'vehicle_id' => $vehicle->id, 'driver_id' => $driver->id, 'consignment_ids' => [$toMandera->id, $toWajir->id],
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($this->owner)->get('/trips/'.Trip::firstOrFail()->id.'/manifest')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Trips/Manifest')
+                ->where('trip.vehicle', 'KAA 100A')
+                ->where('rows.0.tracking_number', 'STC-W')
+                ->where('rows.1.tracking_number', 'STC-M')
+                ->where('totals.pieces', 2)
+                ->where('totals.paid', 500)
+                ->where('totals.balance', 3500));
+    }
+
+    public function test_consignment_note_page_includes_the_public_tracking_link(): void
+    {
+        $consignment = $this->receivedConsignment();
+
+        $this->actingAs($this->owner)->get("/consignments/{$consignment->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Consignments/Show')
+                ->where('trackingUrl', route('tracking', ['tracking' => $consignment->tracking_number]))
+                ->where('consignment.creator.name', 'Test Owner'));
+    }
+
     private function fleetPair(string $licence, string $plate): array
     {
         $driver = Driver::create(['name' => $licence, 'licence_number' => $licence]);

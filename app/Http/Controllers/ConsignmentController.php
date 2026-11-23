@@ -54,8 +54,11 @@ class ConsignmentController extends Controller
     public function show(Consignment $consignment): Response
     {
         $this->authorize('view', $consignment);
-        $consignment->load(['items', 'sender', 'receiver', 'originBranch', 'destinationBranch', 'trackingEvents.branch', 'payments']);
-        return Inertia::render('Consignments/Show', ['consignment' => $consignment->append('balance')]);
+        $consignment->load(['items', 'sender', 'receiver', 'originBranch', 'destinationBranch', 'trackingEvents.branch', 'payments', 'creator:id,name']);
+        return Inertia::render('Consignments/Show', [
+            'consignment' => $consignment->append('balance'),
+            'trackingUrl' => route('tracking', ['tracking' => $consignment->tracking_number]),
+        ]);
     }
 
     public function payment(Request $request, Consignment $consignment): RedirectResponse
