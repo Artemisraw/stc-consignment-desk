@@ -14,6 +14,11 @@ enum Role: string
         return in_array($this, [self::Manager, self::Owner], true);
     }
 
+    public function canReversePayments(): bool
+    {
+        return in_array($this, [self::Manager, self::Owner], true);
+    }
+
     public function canViewReports(): bool
     {
         return in_array($this, [self::Manager, self::Owner], true);

@@ -25,6 +25,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/consignments', [ConsignmentController::class, 'store'])->name('consignments.store');
     Route::get('/consignments/{consignment}', [ConsignmentController::class, 'show'])->name('consignments.show');
     Route::post('/consignments/{consignment}/payments', [ConsignmentController::class, 'payment'])->name('consignments.payment');
+    Route::get('/consignments/{consignment}/edit', [ConsignmentController::class, 'edit'])->name('consignments.edit');
+    Route::put('/consignments/{consignment}', [ConsignmentController::class, 'update'])->name('consignments.update');
+    Route::post('/consignments/{consignment}/cancel', [ConsignmentController::class, 'cancel'])->name('consignments.cancel');
+    Route::post('/consignments/{consignment}/payments/{payment}/reverse', [ConsignmentController::class, 'reversePayment'])
+        ->scopeBindings()->name('consignments.payments.reverse');
     Route::post('/consignments/{consignment}/deliver', [ConsignmentController::class, 'deliver'])->name('consignments.deliver');
 
     Route::get('/fleet', [FleetController::class, 'index'])->name('fleet.index');
@@ -35,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/trips', [TripController::class, 'index'])->name('trips.index');
     Route::post('/trips', [TripController::class, 'store'])->name('trips.store');
     Route::get('/trips/{trip}/manifest', [TripController::class, 'manifest'])->name('trips.manifest');
+    Route::post('/trips/{trip}/cancel', [TripController::class, 'cancel'])->name('trips.cancel');
     Route::post('/trips/{trip}/advance', [TripController::class, 'advance'])->name('trips.advance');
 
     Route::get('/reports', ReportController::class)->middleware('role:manager,owner')->name('reports');

@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Branch;
 use App\Models\Consignment;
 use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -69,6 +70,9 @@ class ConsignmentService
         return DB::transaction(function () use ($consignment, $amount, $method, $user, $reference) {
             // Re-read under a row lock so concurrent submissions cannot both pass the balance check.
             $locked = Consignment::query()->lockForUpdate()->findOrFail($consignment->id);
+            if (in_array($locked->status, [ConsignmentStatus::Cancelled, ConsignmentStatus::Delivered], true)) {
+                throw ValidationException::withMessages(['amount' => 'Payments can only be recorded on an open consignment.']);
+            }
             if ($amount < 1 || $amount > $locked->balance) {
                 throw ValidationException::withMessages(['amount' => 'The payment must be between KES 1 and the outstanding balance.']);
             }
@@ -107,6 +111,116 @@ class ConsignmentService
                 'description' => 'Handed over to the receiver.',
                 'occurred_at' => now(),
             ]);
+
+            return $consignment->refresh();
+        });
+    }
+
+    /** Correct a consignment that has not been loaded yet. */
+    public function update(Consignment $consignment, array $data, User $user): Consignment
+    {
+        return DB::transaction(function () use ($consignment, $data, $user) {
+            $locked = Consignment::query()->with(['sender', 'receiver'])->lockForUpdate()->findOrFail($consignment->id);
+            if ($locked->status !== ConsignmentStatus::Received) {
+                throw ValidationException::withMessages(['consignment' => 'Only a consignment that has not been loaded can be edited.']);
+            }
+
+            $total = collect($data['items'])->sum(fn (array $item) => (int) $item['amount']);
+            if ($total < $locked->paid_amount) {
+                throw ValidationException::withMessages([
+                    'items' => "The new total is below the KES {$locked->paid_amount} already paid. Reverse a payment first.",
+                ]);
+            }
+
+            if (empty($data['sender']['name'])) {
+                $senderId = null; // counter sale
+            } elseif ($locked->sender) {
+                $locked->sender->update($data['sender']);
+                $senderId = $locked->sender->id;
+            } else {
+                $senderId = Customer::create($data['sender'])->id;
+            }
+            $locked->receiver->update($data['receiver']);
+
+            $previousTotal = $locked->total_amount;
+            $locked->update([
+                'origin_branch_id' => $data['origin_branch_id'],
+                'destination_branch_id' => $data['destination_branch_id'],
+                'sender_id' => $senderId,
+                'total_amount' => $total,
+                'notes' => $data['notes'] ?? null,
+            ]);
+            $locked->items()->delete();
+            $locked->items()->createMany($data['items']);
+
+            $locked->trackingEvents()->create([
+                'branch_id' => $locked->origin_branch_id,
+                'created_by' => $user->id,
+                'status' => ConsignmentStatus::Received,
+                'description' => 'Consignment details corrected at the counter.',
+                'metadata' => ['previous_total' => $previousTotal, 'total' => $total],
+                'occurred_at' => now(),
+            ]);
+
+            return $consignment->refresh();
+        });
+    }
+
+    public function cancel(Consignment $consignment, string $reason, User $user): Consignment
+    {
+        return DB::transaction(function () use ($consignment, $reason, $user) {
+            $locked = Consignment::query()->lockForUpdate()->findOrFail($consignment->id);
+            if ($locked->status !== ConsignmentStatus::Received) {
+                throw ValidationException::withMessages(['consignment' => 'Only a consignment that has not been loaded can be cancelled.']);
+            }
+            if ($locked->paid_amount > 0) {
+                throw ValidationException::withMessages([
+                    'consignment' => "Reverse the KES {$locked->paid_amount} already paid before cancelling.",
+                ]);
+            }
+
+            $locked->update([
+                'status' => ConsignmentStatus::Cancelled,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $reason,
+            ]);
+            $locked->trackingEvents()->create([
+                'branch_id' => $locked->origin_branch_id,
+                'created_by' => $user->id,
+                'status' => ConsignmentStatus::Cancelled,
+                'description' => 'Consignment cancelled.',
+                'metadata' => ['reason' => $reason],
+                'occurred_at' => now(),
+            ]);
+
+            return $consignment->refresh();
+        });
+    }
+
+    /** Reverse a completed payment. The row is kept and marked reversed; it is never deleted. */
+    public function reversePayment(Consignment $consignment, Payment $payment, string $reason, User $user): Consignment
+    {
+        return DB::transaction(function () use ($consignment, $payment, $reason, $user) {
+            $locked = Consignment::query()->lockForUpdate()->findOrFail($consignment->id);
+            $lockedPayment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+
+            if ($lockedPayment->consignment_id !== $locked->id) {
+                throw ValidationException::withMessages(['payment' => 'This payment belongs to another consignment.']);
+            }
+            if ($lockedPayment->status !== PaymentStatus::Completed) {
+                throw ValidationException::withMessages(['payment' => 'Only a completed payment can be reversed.']);
+            }
+            if (in_array($locked->status, [ConsignmentStatus::Delivered, ConsignmentStatus::Cancelled], true)) {
+                throw ValidationException::withMessages(['payment' => 'Payments on a delivered or cancelled consignment cannot be reversed.']);
+            }
+
+            $lockedPayment->update([
+                'status' => PaymentStatus::Reversed,
+                'reversed_at' => now(),
+                'reversed_by' => $user->id,
+                'reversal_reason' => $reason,
+            ]);
+            $locked->decrement('paid_amount', $lockedPayment->amount);
 
             return $consignment->refresh();
         });
