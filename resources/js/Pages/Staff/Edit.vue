@@ -8,6 +8,8 @@ const form = useForm({
     email: props.staffMember.email,
     role: props.staffMember.role,
     branch_id: props.staffMember.branch_id,
+    password: '',
+    password_confirmation: '',
 });
 const submit = () => form.put(`/staff/${props.staffMember.id}`);
 </script>
@@ -21,6 +23,8 @@ const submit = () => form.put(`/staff/${props.staffMember.id}`);
             <div class="field"><label for="edit-email">Email</label><input id="edit-email" v-model="form.email" type="email" required autocomplete="email"><div v-if="form.errors.email" class="error-text">{{ form.errors.email }}</div></div>
             <div class="field"><label for="edit-role">Role</label><select id="edit-role" v-model="form.role" :disabled="staffMember.is_self"><option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option></select><p v-if="staffMember.is_self" class="muted small">You cannot demote your own account.</p><div v-if="form.errors.role" class="error-text">{{ form.errors.role }}</div></div>
             <div class="field"><label for="edit-branch">Branch</label><select id="edit-branch" v-model="form.branch_id" required><option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option></select><div v-if="form.errors.branch_id" class="error-text">{{ form.errors.branch_id }}</div></div>
+            <div class="field"><label for="edit-password">New password <span class="muted">(optional)</span></label><input id="edit-password" v-model="form.password" type="password" minlength="8" autocomplete="new-password"><p class="muted small">Leave blank to keep the current password.</p><div v-if="form.errors.password" class="error-text">{{ form.errors.password }}</div></div>
+            <div class="field"><label for="edit-password-confirmation">Confirm new password</label><input id="edit-password-confirmation" v-model="form.password_confirmation" type="password" minlength="8" autocomplete="new-password"></div>
             <div class="actions"><button class="button primary" :disabled="form.processing">Save changes</button><Link class="button" href="/staff">Cancel</Link></div>
         </form>
     </AppLayout>
