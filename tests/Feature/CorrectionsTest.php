@@ -56,7 +56,7 @@ class CorrectionsTest extends TestCase
         $this->assertSame('Corrected Name', $consignment->receiver->name);
         $this->assertCount(2, $consignment->items);
         $event = $consignment->trackingEvents()->latest('id')->first();
-        $this->assertSame(['previous_total' => 2000, 'total' => 2200], $event->metadata);
+        $this->assertEquals(['previous_total' => 2000, 'total' => 2200], $event->metadata); // MySQL JSON does not keep key order
     }
 
     public function test_a_correction_cannot_bring_the_total_below_the_amount_paid(): void
