@@ -96,6 +96,26 @@ class StaffAccountsTest extends TestCase
         $this->assertAuthenticatedAs($staff);
     }
 
+    public function test_resetting_a_password_signs_out_sessions_started_with_the_old_one(): void
+    {
+        $staff = $this->makeUser(Role::Clerk, 'signed-in@example.test');
+        $sessionBeforeReset = ['password_hash_web' => $staff->getAuthPassword()];
+
+        $this->actingAs($staff)->withSession($sessionBeforeReset)->get('/dashboard')->assertOk();
+
+        $this->actingAs($this->owner)->put("/staff/{$staff->id}", [
+            'name' => $staff->name,
+            'email' => $staff->email,
+            'role' => $staff->role->value,
+            'branch_id' => $staff->branch_id,
+            'password' => 'owner-reset-password',
+            'password_confirmation' => 'owner-reset-password',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($staff->refresh())->withSession($sessionBeforeReset)->get('/dashboard')->assertRedirect('/login');
+        $this->assertGuest();
+    }
+
     public function test_staff_email_is_normalized_and_mixed_case_login_succeeds(): void
     {
         $this->actingAs($this->owner)->post('/staff', [
