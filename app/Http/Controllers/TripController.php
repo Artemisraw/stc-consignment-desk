@@ -30,10 +30,14 @@ class TripController extends Controller
             'vehicle', 'driver', 'currentBranch',
             'consignments' => fn ($query) => $query->visibleTo($user)->with(['receiver', 'destinationBranch']),
         ])->visibleTo($user)->latest()->get()
-            ->each(fn (Trip $trip) => $trip->setAttribute('can', [
-                'advance' => $trip->status === TripStatus::InTransit && $user->can('update', $trip),
-                'cancel' => $user->can('cancel', $trip),
-            ]));
+            ->each(function (Trip $trip) use ($user) {
+                // The stop the button confirms; the server refuses the press if the truck has moved since.
+                $trip->setAttribute('next_stop', $trip->status === TripStatus::InTransit ? $this->service->nextStop($trip)?->only('id', 'name') : null);
+                $trip->setAttribute('can', [
+                    'advance' => $trip->status === TripStatus::InTransit && $user->can('update', $trip),
+                    'cancel' => $user->can('cancel', $trip),
+                ]);
+            });
 
         return Inertia::render('Trips/Index', [
             'trips' => $trips,
@@ -101,7 +105,8 @@ class TripController extends Controller
     public function advance(Request $request, Trip $trip): RedirectResponse
     {
         $this->authorize('update', $trip);
-        $this->service->advance($trip, $request->user());
+        $data = $request->validate(['stop_id' => ['nullable', 'integer']]);
+        $this->service->advance($trip, $request->user(), isset($data['stop_id']) ? (int) $data['stop_id'] : null);
         return back()->with('success', 'Trip advanced to the next stop.');
     }
 
