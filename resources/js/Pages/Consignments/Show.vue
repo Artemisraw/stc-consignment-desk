@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import StatusChip from '../../Components/StatusChip.vue';
 const props = defineProps({ consignment: Object, trackingUrl: String, can: Object });
@@ -9,6 +9,8 @@ const shillings = (value) => Number(value).toLocaleString('en-KE');
 const issued = computed(() => new Date(props.consignment.created_at).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' }));
 const pieces = computed(() => props.consignment.items.reduce((sum, item) => sum + Number(item.quantity), 0));
 const payment = useForm({ amount: props.consignment.balance, method: 'cash', reference: '' });
+// Keep the suggested amount in step with the balance after payments, reversals or edits.
+watch(() => props.consignment.balance, (balance) => { payment.amount = balance; });
 const recordPayment = () => payment.post(`/consignments/${props.consignment.id}/payments`, { onSuccess: () => payment.reset() });
 const deliver = useForm({});
 const cancelForm = useForm({ reason: '' });
