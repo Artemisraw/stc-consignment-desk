@@ -12,4 +12,6 @@ class ConsignmentPolicy
     public function create(User $user): bool { return true; }
     public function update(User $user, Consignment $consignment): bool { return true; }
     public function deliver(User $user, Consignment $consignment): bool { return true; }
+    public function cancel(User $user, Consignment $consignment): bool { return true; }
+    public function reversePayment(User $user, Consignment $consignment): bool { return $user->role->canReversePayments(); }
 }

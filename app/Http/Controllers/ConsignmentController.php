@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\ConsignmentStatus;
 use App\Enums\PaymentMethod;
 use App\Http\Requests\StoreConsignmentRequest;
+use App\Http\Requests\UpdateConsignmentRequest;
 use App\Models\Branch;
 use App\Models\Consignment;
+use App\Models\Payment;
 use App\Services\ConsignmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -54,8 +56,55 @@ class ConsignmentController extends Controller
     public function show(Consignment $consignment): Response
     {
         $this->authorize('view', $consignment);
-        $consignment->load(['items', 'sender', 'receiver', 'originBranch', 'destinationBranch', 'trackingEvents.branch', 'payments']);
-        return Inertia::render('Consignments/Show', ['consignment' => $consignment->append('balance')]);
+        $consignment->load(['items', 'sender', 'receiver', 'originBranch', 'destinationBranch', 'trackingEvents.branch', 'payments.recorder:id,name', 'payments.reverser:id,name', 'creator:id,name']);
+        return Inertia::render('Consignments/Show', [
+            'consignment' => $consignment->append('balance'),
+            'trackingUrl' => route('tracking', ['tracking' => $consignment->tracking_number]),
+            'can' => [
+                'edit' => request()->user()->can('update', $consignment) && $consignment->status === ConsignmentStatus::Received,
+                'cancel' => request()->user()->can('cancel', $consignment) && $consignment->status === ConsignmentStatus::Received,
+                'reverse_payments' => request()->user()->can('reversePayment', $consignment),
+            ],
+        ]);
+    }
+
+    public function edit(Consignment $consignment): Response|RedirectResponse
+    {
+        $this->authorize('update', $consignment);
+        if ($consignment->status !== ConsignmentStatus::Received) {
+            return redirect()->route('consignments.show', $consignment)->with('error', 'Only a consignment that has not been loaded can be edited.');
+        }
+
+        return Inertia::render('Consignments/Edit', [
+            'consignment' => $consignment->load(['items', 'sender', 'receiver']),
+            'branches' => Branch::orderBy('route_order')->get(),
+        ]);
+    }
+
+    public function update(UpdateConsignmentRequest $request, Consignment $consignment): RedirectResponse
+    {
+        $this->authorize('update', $consignment);
+        $this->service->update($consignment, $request->validated(), $request->user());
+
+        return redirect()->route('consignments.show', $consignment)->with('success', "{$consignment->tracking_number} corrected.");
+    }
+
+    public function cancel(Request $request, Consignment $consignment): RedirectResponse
+    {
+        $this->authorize('cancel', $consignment);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+        $this->service->cancel($consignment, $data['reason'], $request->user());
+
+        return back()->with('success', "{$consignment->tracking_number} cancelled.");
+    }
+
+    public function reversePayment(Request $request, Consignment $consignment, Payment $payment): RedirectResponse
+    {
+        $this->authorize('reversePayment', $consignment);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+        $this->service->reversePayment($consignment, $payment, $data['reason'], $request->user());
+
+        return back()->with('success', 'Payment reversed.');
     }
 
     public function payment(Request $request, Consignment $consignment): RedirectResponse

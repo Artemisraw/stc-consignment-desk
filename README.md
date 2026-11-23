@@ -43,7 +43,7 @@ The public tracker is at `/`; try `STC-5154`. The staff login is `/login`.
 ## Verification
 
 ```bash
-php artisan test
+vendor/bin/phpunit
 npm run build
 ```
 

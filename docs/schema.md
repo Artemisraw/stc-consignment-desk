@@ -9,7 +9,7 @@
 | `customers` | Sender and receiver contacts | `name`, `phone`, `email` |
 | `consignments` | Shipment header and financial total | `tracking_number`, branch/customer FKs, `status`, integer `total_amount`, integer `paid_amount` |
 | `consignment_items` | Printable note lines | `quantity`, `description`, integer `amount` |
-| `trips` | A vehicle journey | vehicle/driver/current-branch FKs, `status`, timestamps |
+| `trips` | A vehicle journey | vehicle/driver/origin/current-branch FKs, `direction` (outbound/inbound), `status`, timestamps |
 | `trip_consignments` | Trip manifest | unique trip/consignment pair, `unloaded_at` |
 | `tracking_events` | Append-only public history | branch, status, description, metadata, `occurred_at` |
 | `payments` | Completed or pending collections | integer `amount`, method, status, reference |
