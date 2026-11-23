@@ -56,4 +56,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Branch::class);
     }
+
+    /** Whether this user may act for the given branch. Only branch agents are limited to their own. */
+    public function worksAt(?int $branchId): bool
+    {
+        return ! $this->role->isBranchScoped() || ($this->branch_id !== null && $this->branch_id === $branchId);
+    }
 }

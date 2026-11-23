@@ -6,10 +6,14 @@ An operations desk for the Nairobi–Mandera courier corridor. Staff register co
 
 ## Roles
 
-- `clerk`: create consignments, record payments, dispatch and advance trips, hand over cargo.
-- `branch_agent`: the same operational actions at a branch.
-- `manager`: operational actions plus fleet administration and reports.
-- `owner`: unrestricted access.
+- `clerk`: create consignments, record payments, dispatch and advance trips, hand over cargo, at any branch. The counter form starts at the clerk's own branch.
+- `branch_agent`: works only with cargo leaving from or going to their own branch:
+  - books consignments at their own branch only, and corrects or cancels only what was booked there;
+  - takes payments on cargo to or from their branch, and hands over only cargo addressed to it;
+  - records a truck's arrival only when it reaches their branch; cannot load (dispatch) or cancel trips;
+  - sees only their branch's consignments, the trips that start at or will reach their branch, and only their own cargo on those trips and manifests.
+- `manager`: clerk actions plus fleet administration, payment reversals and reports.
+- `owner`: unrestricted access, including staff accounts.
 
 ## Modules
 

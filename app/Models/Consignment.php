@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ConsignmentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Consignment extends Model
@@ -31,6 +32,18 @@ class Consignment extends Model
     public function trips() { return $this->belongsToMany(Trip::class, 'trip_consignments')->withPivot('unloaded_at'); }
 
     /** Nothing is owed on a cancelled consignment. */
+    /** Branch agents see only cargo leaving from or going to their branch. */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if (! $user->role->isBranchScoped()) {
+            return $query;
+        }
+
+        return $query->where(fn (Builder $q) => $q
+            ->where('consignments.origin_branch_id', $user->branch_id)
+            ->orWhere('consignments.destination_branch_id', $user->branch_id));
+    }
+
     public function getBalanceAttribute(): int
     {
         if ($this->status === ConsignmentStatus::Cancelled) {
