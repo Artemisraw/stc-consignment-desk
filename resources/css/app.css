@@ -108,15 +108,6 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .manifest .table-wrap { border-color: #9cadd8; }
 .print-only { display: none; }
 .check-box { width: 4.5rem; }
-@media (max-width: 600px) { .manifest-meta { grid-template-columns: 1fr 1fr; } .signatures, .signatures.three { grid-template-columns: 1fr; } }
-.chip-cancelled, .chip-reversed, .chip-failed { color: var(--stamp); }
-.void-stamp { margin: 0 0 .6rem; padding: .35rem .6rem; border: 2px solid var(--stamp); color: var(--stamp); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-.payment-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: .6rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
-.payment-row:last-child { border-bottom: 0; }
-.payment-row.reversed > div:first-child strong { text-decoration: line-through; color: var(--muted); }
-.payment-row p { margin: .3rem 0 0; }
-.reverse-form { flex-basis: 100%; }
-.reverse-form input { margin-bottom: .5rem; }
 .cashup-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 0 1rem; align-items: end; margin-bottom: 1rem; }
 .cashup-filters .actions { margin-bottom: .9rem; }
 .cashup-filters .error-text { grid-column: 1 / -1; }
@@ -134,6 +125,15 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .cashup .receipt-head h2 { white-space: nowrap; }
 @media (max-width: 900px) { .cashup-filters { grid-template-columns: 1fr 1fr; } .cashup-filters .actions { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .cashup-filters, .cashup-split { grid-template-columns: 1fr; } .cashup-totals { grid-template-columns: 1fr; } .cashup-totals div { border-right: 0; border-bottom: 1px solid #9cadd8; } .cashup-totals div:last-child { border-bottom: 0; } }
+@media (max-width: 600px) { .manifest-meta { grid-template-columns: 1fr 1fr; } .signatures, .signatures.three { grid-template-columns: 1fr; } }
+.chip-cancelled, .chip-reversed, .chip-failed { color: var(--stamp); }
+.void-stamp { margin: 0 0 .6rem; padding: .35rem .6rem; border: 2px solid var(--stamp); color: var(--stamp); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.payment-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: .6rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+.payment-row:last-child { border-bottom: 0; }
+.payment-row.reversed > div:first-child strong { text-decoration: line-through; color: var(--muted); }
+.payment-row p { margin: .3rem 0 0; }
+.reverse-form { flex-basis: 100%; }
+.reverse-form input { margin-bottom: .5rem; }
 @page { size: A4; margin: 12mm; }
 @media print {
     .masthead, .topnav, .flash, .noprint { display: none !important; }
