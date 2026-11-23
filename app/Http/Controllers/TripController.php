@@ -91,4 +91,11 @@ class TripController extends Controller
         $this->service->advance($trip, $request->user());
         return back()->with('success', 'Trip advanced to the next stop.');
     }
+
+    public function cancel(Request $request, Trip $trip): RedirectResponse
+    {
+        $this->authorize('cancel', $trip);
+        $this->service->cancel($trip, $request->user());
+        return back()->with('success', "{$trip->trip_number} cancelled; its consignments are waiting to load again.");
+    }
 }

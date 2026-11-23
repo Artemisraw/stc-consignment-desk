@@ -37,7 +37,7 @@ class DashboardController extends Controller
                 'available' => $vehicles->where('status', 'available')->count(),
                 'maintenance' => $vehicles->where('status', 'maintenance')->count(),
                 'waiting' => Consignment::where('status', ConsignmentStatus::Received->value)->count(),
-                'outstanding' => (int) Consignment::query()->selectRaw('COALESCE(SUM(total_amount - paid_amount), 0) AS total')->value('total'),
+                'outstanding' => (int) Consignment::query()->where('status', '!=', ConsignmentStatus::Cancelled->value)->selectRaw('COALESCE(SUM(total_amount - paid_amount), 0) AS total')->value('total'),
             ],
             'vehicles' => $vehicles,
             'consignments' => $consignments,

@@ -135,6 +135,38 @@ class TripService
         });
     }
 
+    /** Undo a dispatch made in error, before the truck reaches its first stop. */
+    public function cancel(Trip $trip, User $user): Trip
+    {
+        return DB::transaction(function () use ($trip, $user) {
+            $trip = Trip::query()->lockForUpdate()->with('originBranch')->findOrFail($trip->id);
+            if ($trip->status !== TripStatus::InTransit || $trip->current_branch_id !== $trip->origin_branch_id) {
+                throw ValidationException::withMessages(['trip' => 'Only a trip that has not reached its first stop can be cancelled.']);
+            }
+
+            $consignments = $trip->consignments()->lockForUpdate()->get();
+            foreach ($consignments as $consignment) {
+                if ($consignment->status !== ConsignmentStatus::InTransit) {
+                    continue;
+                }
+                $consignment->update(['status' => ConsignmentStatus::Received]);
+                $trip->consignments()->updateExistingPivot($consignment->id, ['unloaded_at' => now()]);
+                $consignment->trackingEvents()->create([
+                    'branch_id' => $trip->origin_branch_id,
+                    'created_by' => $user->id,
+                    'status' => ConsignmentStatus::Received,
+                    'description' => "Trip cancelled; back at {$trip->originBranch->name} awaiting loading.",
+                    'metadata' => ['trip_number' => $trip->trip_number],
+                    'occurred_at' => now(),
+                ]);
+            }
+
+            $trip->update(['status' => TripStatus::Cancelled, 'completed_at' => now()]);
+
+            return $trip->refresh();
+        });
+    }
+
     /** Branches still ahead of the given branch, nearest first. */
     private function stopsAfter(Branch $branch, TripDirection $direction): Builder
     {
