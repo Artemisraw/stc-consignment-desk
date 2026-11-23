@@ -1,6 +1,6 @@
 <script setup>
 // Shared intake/edit fields. `form` is an Inertia useForm() object owned by the page.
-const props = defineProps({ form: Object, branches: Array, showPaid: { type: Boolean, default: true }, submitLabel: String });
+const props = defineProps({ form: Object, branches: Array, showPaid: { type: Boolean, default: true }, submitLabel: String, lockOrigin: Boolean });
 defineEmits(['submit']);
 const addItem = () => props.form.items.push({ quantity: 1, description: '', amount: '' });
 </script>
@@ -8,7 +8,7 @@ const addItem = () => props.form.items.push({ quantity: 1, description: '', amou
 <template>
     <form @submit.prevent="$emit('submit')" class="grid two">
         <section class="card"><h2>People and route</h2>
-            <div class="grid two"><div class="field"><label>Origin</label><select v-model="form.origin_branch_id"><option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option></select></div><div class="field"><label>Destination</label><select v-model="form.destination_branch_id"><option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option></select><div class="error-text">{{ form.errors.destination_branch_id }}</div></div></div>
+            <div class="grid two"><div class="field"><label>Origin</label><select v-model="form.origin_branch_id" :disabled="lockOrigin"><option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option></select><p v-if="lockOrigin" class="small muted">Your branch.</p><div class="error-text">{{ form.errors.origin_branch_id }}</div></div><div class="field"><label>Destination</label><select v-model="form.destination_branch_id"><option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option></select><div class="error-text">{{ form.errors.destination_branch_id }}</div></div></div>
             <h3>Sender <span class="muted small">optional</span></h3><div class="field"><label>Name</label><input v-model="form.sender.name"></div><div class="grid two"><div class="field"><label>Phone</label><input v-model="form.sender.phone"></div><div class="field"><label>Email</label><input v-model="form.sender.email" type="email"></div></div>
             <h3>Receiver</h3><div class="field"><label>Name</label><input v-model="form.receiver.name" required><div class="error-text">{{ form.errors['receiver.name'] }}</div></div><div class="grid two"><div class="field"><label>Phone</label><input v-model="form.receiver.phone" required><div class="error-text">{{ form.errors['receiver.phone'] }}</div></div><div class="field"><label>Email</label><input v-model="form.receiver.email" type="email"></div></div>
         </section>

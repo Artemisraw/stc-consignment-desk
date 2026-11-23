@@ -90,17 +90,33 @@ class TripService
         });
     }
 
-    public function advance(Trip $trip, User $user): Trip
+    /**
+     * Record the truck reaching its next stop. Pass the stop the user is confirming so a double press,
+     * two people pressing together, or a stale page cannot move the truck an extra stop.
+     */
+    public function advance(Trip $trip, User $user, ?int $confirmingStopId = null): Trip
     {
-        return DB::transaction(function () use ($trip, $user) {
+        return DB::transaction(function () use ($trip, $user, $confirmingStopId) {
             $trip = Trip::query()->lockForUpdate()->with('currentBranch')->findOrFail($trip->id);
+            if ($confirmingStopId !== null && $trip->current_branch_id === $confirmingStopId) {
+                throw ValidationException::withMessages(['trip' => "{$trip->trip_number} has already been recorded at {$trip->currentBranch->name}."]);
+            }
             if ($trip->status !== TripStatus::InTransit) {
                 throw ValidationException::withMessages(['trip' => 'Only an active trip can advance.']);
             }
 
-            $next = $this->stopsAfter($trip->currentBranch, $trip->direction)->first();
+            $next = $this->nextStop($trip);
             if (! $next) {
                 throw ValidationException::withMessages(['trip' => 'This trip is already at the final branch.']);
+            }
+            if ($confirmingStopId !== null && $next->id !== $confirmingStopId) {
+                throw ValidationException::withMessages([
+                    'trip' => "{$trip->trip_number} is now at {$trip->currentBranch->name}. Refresh the page before recording an arrival.",
+                ]);
+            }
+            // Re-checked under the lock: a branch agent records only the truck's arrival at their own branch.
+            if (! $user->worksAt($next->id)) {
+                throw ValidationException::withMessages(['trip' => "Only staff at {$next->name} can record this truck's arrival there."]);
             }
 
             $trip->update(['current_branch_id' => $next->id]);
@@ -165,6 +181,12 @@ class TripService
 
             return $trip->refresh();
         });
+    }
+
+    /** The branch the trip reaches next, or null at the end of the route. */
+    public function nextStop(Trip $trip): ?Branch
+    {
+        return $this->stopsAfter($trip->currentBranch, $trip->direction)->first();
     }
 
     /** Branches still ahead of the given branch, nearest first. */

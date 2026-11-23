@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreConsignmentRequest extends FormRequest
 {
@@ -11,7 +12,11 @@ class StoreConsignmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'origin_branch_id' => ['required', 'exists:branches,id'],
+            'origin_branch_id' => array_filter([
+                'required', 'exists:branches,id',
+                // A branch agent books cargo only at their own counter.
+                $this->user()->role->isBranchScoped() ? Rule::in([$this->user()->branch_id]) : null,
+            ]),
             'destination_branch_id' => ['required', 'different:origin_branch_id', 'exists:branches,id'],
             'sender.name' => ['nullable', 'string', 'max:100'],
             'sender.phone' => ['nullable', 'string', 'max:30'],
@@ -26,5 +31,10 @@ class StoreConsignmentRequest extends FormRequest
             'paid_amount' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return ['origin_branch_id.in' => 'You can only book consignments at your own branch.'];
     }
 }

@@ -22,7 +22,7 @@ class ConsignmentController extends Controller
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Consignment::class);
-        $query = Consignment::with(['receiver', 'originBranch', 'destinationBranch'])->latest();
+        $query = Consignment::with(['receiver', 'originBranch', 'destinationBranch'])->visibleTo($request->user())->latest();
         if ($request->filled('search')) {
             $term = $request->string('search');
             $query->where(fn ($q) => $q->where('tracking_number', 'like', "%{$term}%")
@@ -39,10 +39,16 @@ class ConsignmentController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', Consignment::class);
-        return Inertia::render('Consignments/Create', ['branches' => Branch::orderBy('route_order')->get()]);
+        return Inertia::render('Consignments/Create', ['branches' => Branch::orderBy('route_order')->get()] + $this->originDefaults($request));
+    }
+
+    /** The counter form starts at the user's branch; a branch agent cannot change it. */
+    private function originDefaults(Request $request): array
+    {
+        return ['defaultOriginId' => $request->user()->branch_id, 'lockOrigin' => $request->user()->role->isBranchScoped()];
     }
 
     public function store(StoreConsignmentRequest $request): RedirectResponse
@@ -64,11 +70,13 @@ class ConsignmentController extends Controller
                 'edit' => request()->user()->can('update', $consignment) && $consignment->status === ConsignmentStatus::Received,
                 'cancel' => request()->user()->can('cancel', $consignment) && $consignment->status === ConsignmentStatus::Received,
                 'reverse_payments' => request()->user()->can('reversePayment', $consignment),
+                'pay' => request()->user()->can('recordPayment', $consignment),
+                'deliver' => request()->user()->can('deliver', $consignment),
             ],
         ]);
     }
 
-    public function edit(Consignment $consignment): Response|RedirectResponse
+    public function edit(Request $request, Consignment $consignment): Response|RedirectResponse
     {
         $this->authorize('update', $consignment);
         if ($consignment->status !== ConsignmentStatus::Received) {
@@ -78,7 +86,7 @@ class ConsignmentController extends Controller
         return Inertia::render('Consignments/Edit', [
             'consignment' => $consignment->load(['items', 'sender', 'receiver']),
             'branches' => Branch::orderBy('route_order')->get(),
-        ]);
+        ] + $this->originDefaults($request));
     }
 
     public function update(UpdateConsignmentRequest $request, Consignment $consignment): RedirectResponse
@@ -109,7 +117,7 @@ class ConsignmentController extends Controller
 
     public function payment(Request $request, Consignment $consignment): RedirectResponse
     {
-        $this->authorize('update', $consignment);
+        $this->authorize('recordPayment', $consignment);
         $data = $request->validate([
             'amount' => ['required', 'integer', 'min:1'],
             'method' => ['required', 'in:cash,mpesa,balance_on_delivery'],
