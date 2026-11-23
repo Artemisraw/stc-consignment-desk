@@ -45,7 +45,12 @@ Route::middleware(['auth', EnsureUserIsActive::class])->group(function () {
 
     Route::get('/fleet', [FleetController::class, 'index'])->name('fleet.index');
     Route::post('/fleet/vehicles', [FleetController::class, 'storeVehicle'])->name('fleet.vehicles.store');
+    Route::get('/fleet/vehicles/{vehicle}/edit', [FleetController::class, 'editVehicle'])->name('fleet.vehicles.edit');
+    Route::put('/fleet/vehicles/{vehicle}', [FleetController::class, 'updateVehicle'])->name('fleet.vehicles.update');
     Route::post('/fleet/drivers', [FleetController::class, 'storeDriver'])->name('fleet.drivers.store');
+    Route::get('/fleet/drivers/{driver}/edit', [FleetController::class, 'editDriver'])->name('fleet.drivers.edit');
+    Route::put('/fleet/drivers/{driver}', [FleetController::class, 'updateDriver'])->name('fleet.drivers.update');
+    Route::patch('/fleet/drivers/{driver}/toggle', [FleetController::class, 'toggleDriver'])->name('fleet.drivers.toggle');
     Route::patch('/fleet/vehicles/{vehicle}/toggle', [FleetController::class, 'toggleVehicle'])->name('fleet.vehicles.toggle');
 
     Route::get('/trips', [TripController::class, 'index'])->name('trips.index');
